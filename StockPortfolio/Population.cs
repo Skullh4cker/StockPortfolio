@@ -44,11 +44,14 @@ namespace StockPortfolio
                 prevBest = Individuals.Select(x => x.Fitness).Max();
                 prevAvg = Individuals.Select(x => x.Fitness).Average();
                 PrintInfo();
+                //PrintIndividuals();
 
                 //int count = (int)(Individuals.Count * GlobalParametrs.ParentPoolPercent);
                 int count = GlobalParametrs.PARENTPOOL_SIZE;
-                parentPool = MyRouletteSelect(Individuals, count);
+                //parentPool = MyRouletteSelect(Individuals, count);
                 //parentPool = TournamentSelect(Individuals, count);
+                parentPool = TimurRoulette(count);
+                //parentPool = TTTroulette(count);
                 /*
                 var orderedIndividuals = Individuals.OrderByDescending(x => x.Fitness).ToList();
 
@@ -67,7 +70,7 @@ namespace StockPortfolio
                             newPopulation.Add(newIndividual);
                         }
                     }
-                    if (newPopulation.Count >= GlobalParametrs.POPULATION_SIZE) break;
+                    if (newPopulation.Count >= populationSize) break;
                 }
                 /*
                 while (newPopulation.Count < GlobalParametrs.POPULATION_SIZE)
@@ -85,8 +88,7 @@ namespace StockPortfolio
 
                 if (counter > 10) break;
                 else Console.SetCursorPosition(0, 0);
-                //Console.WriteLine("===============================");
-                //
+                //Console.WriteLine("===============================");\
             }
             Console.WriteLine("Решение найдено!");
             PrintIndividuals();
@@ -208,6 +210,116 @@ namespace StockPortfolio
         private byte RandomWeightInRange(int min, int max)
         {
             return (byte)random.Next(min, max);
+        }
+        public List<Individual> TimurRoulette(int PULL_SIZE)
+        {
+            List<Individual> popul = new List<Individual>();
+            popul.AddRange(Individuals);
+            List<Individual> pull = new List<Individual>();
+            //Random random = new Random();
+            Individual individual;
+
+            for (int i = 0; i < populationSize; i++)
+            {
+                for (int j = i; j < populationSize; j++)
+                {
+                    if (popul[i].Fitness < popul[j].Fitness)
+                    {
+                        individual = popul[i];
+                        popul[i] = popul[j];
+                        popul[j] = individual;
+                    }
+                }
+            }
+
+            double sumFitness = 0;
+            for (int i = 0; i < popul.Count; i++)
+            {
+                sumFitness += popul[i].Fitness;
+            }
+
+            double[] probability = new double[popul.Count];
+            for (int i = 0; i < probability.Length; i++)
+            {
+                probability[i] = popul[i].Fitness / sumFitness;
+            }
+
+            double tik = 0;
+            double a = 0;
+            for (int i = 0; i < PULL_SIZE; i++)
+            {
+                tik = random.NextDouble();
+                for (int j = 0; j < probability.Length; j++)
+                {
+                    a += probability[j];
+                    if (a > tik)
+                    {
+                        pull.Add(popul[j]);
+                        break;
+                    }
+                }
+            }
+
+            List<Individual> pullArr = new List<Individual>();
+            for (int i = 0; i < pull.Count; i++)
+            {
+                pullArr.Add(pull[i]);
+            }
+
+            return pullArr;
+        }
+        public List<Individual> TTTroulette(int PULL_SIZE)
+        {
+            List<Individual> pull = new List<Individual>();
+            //List<Individual> Individuals = new List<Individual>(this.Individuals);
+            //Random random = new Random();
+            Individual individual;
+            for (int i = 0; i < Individuals.Count; i++)
+            {
+                for (int j = i; j < Individuals.Count; j++)
+                {
+                    if (Individuals[i].Fitness < Individuals[j].Fitness)
+                    {
+                        individual = Individuals[i];
+                        Individuals[i] = Individuals[j];
+                        Individuals[j] = individual;
+                    }
+                }
+            }
+
+            double sumFitness = 0;
+            for (int i = 0; i < Individuals.Count; i++)
+            {
+                sumFitness += Individuals[i].Fitness;
+            }
+            double[] probability = new double[Individuals.Count];
+            for (int i = 0; i < probability.Length; i++)
+            {
+                probability[i] = Individuals[i].Fitness / sumFitness;
+            }
+
+            double tik = 0;
+            double a = 0;
+            for (int i = 0; i < PULL_SIZE; i++)
+            {
+                tik = random.NextDouble();
+                for (int j = 0; j < probability.Length; j++)
+                {
+                    a += probability[j];
+                    if (a > tik)
+                    {
+                        pull.Add(Individuals[j]);
+                        break;
+                    }
+                }
+            }
+
+            List<Individual> pullArr = new List<Individual>();
+            for (int i = 0; i < pull.Count; i++)
+            {
+                pullArr.Add(pull[i]);
+            }
+            return pullArr;
         }
         public List<Individual> TournamentSelect(List<Individual> individuals, int count)
         {
